@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
+  FName            String           @db.VarChar(15)
+  image            String?          @db.VarChar(150)
+  LName            String?          @db.VarChar(15)
+  password         String?          @db.VarChar(254)
+  salt             String?          @db.VarChar(254)
+  authProviderType AuthProviderType
+  role             Role             @default(STUDENT)
+  borrowings       Borrowing[]
+}
+
+model Book {
+  id              Int         @id @default(autoincrement())
+  title           String      @unique
+  author          String      @db.VarChar(64)
+  isbn            String?     @db.VarChar(64)
+  quantity        Int         @default(1)
+  available       Int         @default(1)
+  genres          BookGenre[]
+  publicationYear Int         @db.Year
+  description     String      @db.Text
+  borrowings      Borrowing[]
+}
+
+model Genre {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  bookGenre BookGenre[]
+}
+
+model BookGenre {
+  id      Int @id @default(autoincrement())
+  bookId  Int
+  genreId Int
+
+  Book  Book  @relation(fields: [bookId], references: [id])
+  Genre Genre @relation(fields: [genreId], references: [id])
+
+  @@unique(fields: [bookId, genreId])
+}
+
+model Borrowing {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  bookId       Int
+  borrowedDate DateTime @default(now())
+  returnedDate DateTime
+  status       Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+  book Book @relation(fields: [bookId], references: [id])
+
+  @@unique(fields: [userId, bookId])
+}
+
+enum Role {
+  STUDENT
+  LIBRARIAN
+  ADMIN
+}
+
+enum AuthProviderType {
+  OAUTH
+  EMAIL
+  CREDENTIALS
+}
